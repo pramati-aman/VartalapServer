@@ -1,6 +1,8 @@
 package aman.pramati.thread.chat.server;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
@@ -12,9 +14,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 
 import aman.pramati.thread.chat.client.ClientHandler;
 import aman.pramati.thread.chat.exception.IncorrectConfigurationException;
@@ -22,7 +22,7 @@ import aman.pramati.thread.chat.exception.ServerListeningException;
 import aman.pramati.thread.chat.exception.UnauthorizedAccessException;
 import aman.pramati.thread.chat.exception.UsernameAlreadyTakenException;
 import aman.pramati.thread.chat.exception.VartalapCheckedException;
-import aman.pramati.thread.chat.sever.utils.ServerConfiguration;
+import aman.pramati.thread.chat.server.utils.ServerConfiguration;
 
 @SpringBootApplication
 public class VartalapServer implements Serializable {
@@ -41,7 +41,7 @@ public class VartalapServer implements Serializable {
 			serverSocket = new ServerSocket(configurations.getPort(),configurations.getMaxQueueLength());
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new IncorrectConfigurationException("Unable to open the port, it may be already bound");
+			throw new IncorrectConfigurationException("Unable to open the port, it may already be bound");
 		}
 		
 		clientMap = new HashMap<>();
@@ -52,6 +52,8 @@ public class VartalapServer implements Serializable {
 		if(clientMap.containsKey(username)) {
 			throw new UsernameAlreadyTakenException();
 		}
+		
+		clientMap.put(username, s);
 	}
 	
 	@Autowired
@@ -66,12 +68,34 @@ public class VartalapServer implements Serializable {
 		try {
 			while(true) {
 				Socket s = serverSocket.accept();
-				threadPool.submit(new ClientHandler(s));
+				threadPool.submit(new ClientHandler(s, welcomeClient(s)));
 			}
 		}
 		catch(IOException ie) {
 			throw new ServerListeningException("Port has been closed");
 		}
+	}
+
+	private String welcomeClient(Socket s) {
+		String name=null;
+		try {
+			DataInputStream dis = (DataInputStream) s.getInputStream();
+			DataOutputStream dos = (DataOutputStream) s.getOutputStream();
+			String message;
+			dos.writeUTF("UserName#Enter your username to continue in Vartalap: ");
+			while ((message = dis.readUTF()).startsWith("UserName")) {
+				try {
+					addToClientMap(name=message.substring(message.indexOf("UserName#"), message.length()), s);
+					break;
+				} catch (UsernameAlreadyTakenException uae) {
+					dos.writeUTF("UserName#Username already taken, enter a unique username : ");
+				}
+			}
+			dos.writeUTF("Swagat at Vartalap Chat Center");
+		} catch (IOException ie) {
+			ie.printStackTrace();
+		}
+		return name;
 	}
 
 	static VartalapServer intializeServer() {

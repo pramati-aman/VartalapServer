@@ -1,4 +1,4 @@
-package aman.pramati.thread.chat.sever.utils;
+package aman.pramati.thread.chat.server.utils;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;

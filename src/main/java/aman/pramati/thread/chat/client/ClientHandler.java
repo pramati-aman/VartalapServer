@@ -10,27 +10,26 @@ public class ClientHandler implements Runnable{
 	Socket client;
 	DataInputStream dis;
 	DataOutputStream dos;
+	String username;
 	
-	public ClientHandler(Socket s) {
-		client=s;
+	public ClientHandler(Socket client, String username) {
+		this.client=client;
 		try {
-			dis=(DataInputStream) s.getInputStream();
-			dos=(DataOutputStream) s.getOutputStream();
+			dis=(DataInputStream) client.getInputStream();
+			dos=(DataOutputStream) client.getOutputStream();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		this.username=username;
 	}
+	
 	@Override
 	public void run() {
-		String message;
+//		String message;
 		try {
-			message = dis.readUTF();
-			while( message.startsWith("UserName")) {
-				
-			}
-			dos.writeUTF("Swagat at Vartalap Chat Center");
+			
 		}
-		catch(IOException ie) {
+		catch(Exception ie) {
 			ie.printStackTrace();
 		}
 		
